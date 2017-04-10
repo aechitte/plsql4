@@ -1,0 +1,177 @@
+
+1)Practice 1
+•Create a procedure called USER_QUERY_EMP that accepts three parameters. Parameter p_myeno is of IN parameter mode which provides the employee_id value. The other two parameters p_myjob and p_mysal are of OUT mode. The procedure retrieves the salary and job_id of an employee with the provided employee_id and assigns those to the two OUT parameters respectively. The procedure should handle the error if the employee_id does not exist in the EMPLOYEES table by displaying an appropriate message. Use bind variables for the two OUT Parameters.
+•Compile the code, invoke the procedure, and display the salary and job title for employee number 200. Do the same for employee number 120.
+
+===>
+--DECLARATION PART
+
+            create or replace procedure USER_QUERY_EMP(p_myeno number, p_myjob out emp.job%type ,  p_mysal out emp.sal%type) as
+                  
+--EXECUTION PART
+	begin
+	select job, sal into p_myjob, p_mysal from emp where empno=p_myeno;
+	dbms_output.put_line( ' salary is  '|| p_mysal);
+  	dbms_output.put_line( ' job is  '|| p_myjob);
+
+--EXCEPTION PART
+	exception
+	when no_data_found then
+	dbms_output.put_line(' emp id does not exist');
+	end;
+                  /
+
+ declare
+--var_sal emp.sal%type;
+--var_job emp.job%type;
+begin
+USER_QUERY_EMP(7839,:var_job,:var_sal );
+ --dbms_output.put_line('job from caller block   '||var_job||' sal from caller block     '||var_sal );
+end;
+/
+--------------------------------------------------------------------------------------------------------------------------------
+salary is  6050
+job is  PRESIDENT
+job from caller block   PRESIDENT sal from caller block     6050
+
+PL/SQL procedure successfully completed.
+=======================================================================================
+2) Practice 2
+
+•Create a function named USER_ANNUAL_COMP that has three parameters p_eno, p_sal and p_comm for passing on the values of an employee_id, the current salary and commission of the employee respectively. The function calculates and returns the annual compensation of the employee by using the following formula.
+     annual_compensation =  (p_sal+p_comm)*12
+      If the salary or commission value is NULL then zero should be substituted for it. 
+•Give a call to USER_ANNUAL_COMP from a SELECT statement, against the EMPLOYEES table.
+
+===>
+--DECLARATION PART
+
+create or replace function USER_ANNUAL_COMP(p_eno emp.empno%type,p_sal emp.sal%type, p_comm  emp.comm%type ) return number as 
+
+annual_compensation  emp.comm%type;
+
+--EXECUTION PART
+
+ 	begin
+                  annual_compensation :=(nvl(p_sal,0) + nvl(p_comm,0))*12;
+                  return annual_compensation;
+
+--EXCEPTION PART
+
+ 	exception
+	when no_data_found then
+	dbms_output.put_line(' emp id does not exist');
+	end;
+                  /
+	
+                  
+declare
+v_anc emp.comm%type;
+emp_no  emp.empno%type:= &num;
+begin
+select USER_ANNUAL_COMP(empno,sal,comm) into v_anc from emp where empno=emp_no ;
+dbms_output.put_line('comission from caller block='||v_anc );
+end;
+/
+Enter value for num: 7839
+old   3: emp_no  emp.empno%type:= &num;
+new   3: emp_no  emp.empno%type:= 7839;
+comission from caller block=72600
+
+PL/SQL procedure successfully completed.
+==================================================================================================
+3)Practice 3
+•Create a function named USER_VALID_DEPTNO that has a single parameter p_dno to accept a department number and returns a BOOLEAN value. The function returns TRUE if the department number exists in the DEPARTMENTS table else it returns FALSE.
+•Create a procedure named SHOW_STRENGTH that accepts department number in a single parameter p_deptno from user. The procedure gives a call to USER_VALID_DEPTNO. If the function returns TRUE then the procedure finds out how many employees are there in the department from the EMPLOYEES table and displays the same on the screen. If the function returns FALSE then the procedure displays an appropriate error message.
+•Give call to SHOW_STRENGTH by passing on department number 10. Do the same for department number 76
+ 
+===>
+	--1)
+     	create or replace function USER_VALID_DEPTNO(p_dno number)  return boolean as
+	dt number;
+
+	begin 
+	select deptno into dt from dept where deptno=p_dno;
+	if  dt = p_dno then
+                 	return true;
+	else
+	return false;
+	end if;
+	
+
+	exception
+	when no_data_found then
+	 dbms_output.put_line('deptno is not available ');
+	end ;
+	/
+	
+--2)
+	create or replace procedure  SHOW_STRENGTH (p_deptno number)  as
+	ect number;	
+
+ 	begin
+	if  USER_VALID_DEPTNO(p_deptno) then
+	select count(*) into ect from emp where deptno=p_deptno;
+	 dbms_output.put_line(' number of employees in dept are    '|| ect);
+	
+	else
+	dbms_output.put_line('deptno is not available ');
+	end if;
+	end;
+	
+	collor:
+	
+	declare
+	dpno number:=&no;
+	begin
+	SHOW_STRENGTH (dpno);
+	
+	end;
+-------------------------------------------------------------------------------------------------------------------------------------------
+Enter value for no: 10
+old   2:  dpno number:=&no;
+new   2:  dpno number:=10;
+number of employees in dept are3
+
+PL/SQL procedure successfully completed.
+===================================================================================================
+4)
+	Create or replace procedure SHOW_RECORDS(p_join_date date) as 
+	
+
+	cursor c1 is select * from emp where hiredate > p_join_date  ;
+	begin
+	dbms_output.put_line('Employees Joined after '||p_join_date  );
+	dbms_output.put_line('ename' ||'     job    ' ||'    salary   '||'department');
+	dbms_output.put_line(' -----------------------------------------------------------------------------------------------------------------  ');
+	for v1 in c1
+	loop
+	dbms_output.put_line(v1.ename|| '   '||v1.job ||'    '||v1.sal||'    '||v1.deptno);
+
+	end loop;
+
+	end;
+	/
+
+	declare
+	join_date date :='&date';
+	begin
+	SHOW_RECORDS(join_date);
+	end;
+ 	/ 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Employees Joined after 17-DEC-81
+ename     job        salary   department
+-------------------------------------------
+SCOTT   ANALYST    7300    20
+ADAMS   CLERK    1210    20
+MILLER   CLERK    1560    10
+
+PL/SQL procedure successfully completed.
+===================================================================================================
+5)
+     create or replace ADD_EMPLOYEE(job_id emp.job%type, manager_id emp.mgr%type,hire_date emp.hiredate%type,salary emp.sal      %type,commission emp.comm%type,department_id emp.deptno%type)as
+ 
+===============================================================================================
+6)
+create or replace procedure Gen_Bill (p_custid,bill_amt,bill_date)
